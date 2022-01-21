@@ -7,7 +7,8 @@
 
 #   Notes:
 #     - For the Fall 2020 files, I launched sensors only to measure full range. 
-#       Unfortunately low range is more appropriate for our sites. 
+#       Unfortunately low range is more appropriate for our sites. Even more Unfortunately,
+#       the column names are all goofed up. Might just want to read those files separately
 
 # 1. Libraries and workspace ----------------------------------------------
 
