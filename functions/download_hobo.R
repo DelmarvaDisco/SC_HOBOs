@@ -13,6 +13,7 @@ download_hobo <- function(files){
     as.tibble() %>% 
     # Only select important cols, forget that couple attached stuff
     select(!contains(c("Coupler", "Host", "End of", "Stopped"))) %>% 
+    mutate(Catchment = str_sub(files, 6, 7)) %>% 
     # Add a column for the file name
     mutate(file = str_sub(files, 9)) %>% 
     # Get the site from the file name
