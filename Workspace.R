@@ -23,6 +23,7 @@ library(tidyverse)
 library(stringr)
 
 source("functions/download_hobo.R")
+source("functions/prelim_plot.R")
 
 
 # 2. Read in the files ----------------------------------------------------
@@ -84,19 +85,23 @@ colnames(data_BC) <- c("record_num",
                        "time_zone")
 
 data <- rbind(data_JL, data_BC) %>% 
-  mutate(Timestamp = mdy_hms(Timestamp))
+  mutate(Timestamp = mdy_hms(Timestamp)) %>% 
+  mutate("SpC_low_range" = Low_range/(1 - ((25 - Temp_C) * 0.021))) %>% 
+  mutate("SpC_full_range" = Full_range/(1 - ((25 - Temp_C) * 0.021))) %>% 
+  filter(Full_range >= 10)
 
-rm(data_BC, data_JL, data_dir)
+rm(data_dir)
 
 # 4. Check out a big dygraph and make a raw csv --------------------------------------------------------------
 
 data_xts <- data %>% 
-  select(c(Timestamp, Site_ID, Full_range)) %>% 
-  pivot_wider(names_from = Site_ID, values_from = Full_range)
+  #filter(Catchment == "BC") %>% 
+  select(c(Timestamp, Site_ID, SpC_full_range)) %>% 
+  pivot_wider(names_from = Site_ID, values_from = SpC_full_range)
 
 data_xts <- xts(data_xts, order.by = data_xts$Timestamp)
 
-(big_dygraph <- dygraph(data = data_xts, main = "All the SC data") %>% 
+(big_dygraph <- dygraph(data = data_xts, main = "All Surface data") %>% 
   dyOptions(drawPoints = TRUE, pointSize = 2) %>% 
   dyRangeSelector())
 
@@ -104,9 +109,32 @@ data_dir <- "data/"
 
 write_csv(data, file = paste0(data_dir,"sites_raw.csv"))
 
-# 5. --------------------------------------------------------------------
+# 5. Cut the crappy values --------------------------------------------------------------------
 
 
+# 5a. DK-SW Fall 2020 --------------------------------------------------------------------
+
+#Only have the low range values
+
+SiteName <- "DK_SW"
+
+df <- data %>% 
+  filter(Site_ID == SiteName) %>% 
+  filter(Timestamp <= "2020-12-18 12:00:00") %>% 
+  select(Timestamp, Temp_C, Full_range)
+
+prelim_plot(df)
+
+
+
+# 5b. TS-SW Fall 2020 ---------------------------------------------------------------------
+
+#Only have the low range values
+
+
+# 5c. ND-SW Fall 2020 ---------------------------------------------------------------
+
+#Only
 
 
 
