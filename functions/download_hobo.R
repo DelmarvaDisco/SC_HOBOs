@@ -10,9 +10,9 @@ download_hobo <- function(files){
   temp <- read_csv(paste0(files),
                    skip = 1,
                    col_names = TRUE) %>% 
-    as.tibble() %>% 
+    as_tibble() %>% 
     # Only select important cols, forget that couple attached stuff
-    select(!contains(c("Coupler", "Host", "End of", "Stopped"))) %>% 
+    select(!contains(c("Coupler", "Host", "End of", "Stopped", "Full Range"))) %>% 
     mutate(Catchment = str_sub(files, 6, 7)) %>% 
     # Add a column for the file name
     mutate(file = str_sub(files, 9)) %>% 
