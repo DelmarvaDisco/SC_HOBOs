@@ -1,7 +1,7 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Name: Raw to csv Jackson Lane
 # Coder: James Maze
-# Date: 21 Jan 2021
+# Date: 21 Jan 2022
 # Purpose: Plot and analyze Jackson Lane SC data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -59,9 +59,10 @@ data_BC <- files %>%
 
 data <- rbind(data_JL, data_BC) 
 
+#Rename columns
 colnames(data) <- c("record_num", 
                    "Timestamp", 
-                   "Low_range", 
+                   "Low_range_uScm", 
                    "Temp_C", 
                    "Catchment",
                    "file", 
@@ -69,12 +70,12 @@ colnames(data) <- c("record_num",
                    "serial_number",
                    "time_zone")
 
+
 data <- data %>% 
   mutate(Timestamp = mdy_hms(Timestamp)) %>% 
-  mutate(Low_range = as.numeric(Low_range)) %>% 
-  mutate("SpC_low_range" = Low_range/(1 - ((25 - Temp_C) * 0.021))) %>% 
-  #mutate("SpC_full_range" = Full_range/(1 - ((25 - Temp_C) * 0.021))) %>% 
-  filter(Low_range >= 10)
+  mutate(Low_range_uScm = as.numeric(Low_range_uScm)) %>% 
+  mutate("SpC_low_range" = Low_range_uScm/(1 - ((25 - Temp_C) * 0.021))) #%>% 
+  #filter(Low_range_uScm >= 10)
 
 rm(data_dir, data_BC, data_JL)
 
