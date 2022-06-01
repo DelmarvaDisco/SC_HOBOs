@@ -13,7 +13,7 @@ download_hobo <- function(files){
     as_tibble() %>% 
     # Only select important cols, forget that coupler attached stuff. 
     #Also elminate Full Range measurements
-    select(!contains(c("Coupler", "Host", "End of", "Stopped", "Full Range"))) %>% 
+    select(!contains(c("Coupler", "Host", "End", "Stopped", "Full Range"))) %>% 
     #Add a column to delineate JL from BC
     mutate(Catchment = str_sub(files, 6, 7)) %>% 
     # Add a column for the file name; could be helpful for data mgmt.

@@ -26,7 +26,8 @@ fun_anomalous <- function(temp, #timeseries data with anomalous values
     
     mutate("residuals" = Low_range_uScm - rolling_median) %>% 
     filter(residuals > min) %>% 
-    filter(residuals < max)
+    filter(residuals < max) %>% 
+    select(-c(rolling_median, residuals))
 
   
   #return the df without anomalous values
