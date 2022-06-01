@@ -21,23 +21,39 @@ download_hobo <- function(files){
     # Get the Site_ID from the file name
     mutate(Site_ID = str_sub(file, 1, 5))
   
-  #"Borrowed" this code from Nate Jones
+  #Pull serial number from column names
   serial_number <- colnames(temp)[grep("LGR",colnames(temp))][1] %>% 
     str_extract(., pattern = "\\d{8,10}")
   
+  #Pull the timezone from column names
   time_zone <- colnames(temp)[grep("GMT",colnames(temp))]  %>% 
     str_sub(12, 20)
   
-  #This is an ugly fix, but I couldn't just name columns bc files had different column numbers
-  cols <- colnames(temp)
-  colzzz <- str_trunc(cols, width = 7, side = "right", ellipsis = "_")
-  colnames(temp) <- colzzz
-
-  #Add columns to denote sn and tz
-  temp <- temp %>% 
-    add_column(serial_number) %>% 
-    add_column(time_zone)
+  #Specifiy the timezones with syntax for lubridate
+  tz <- if_else(time_zone=="GMT-04:00",
+                "America/New_York",
+                if_else(time_zone=="GMT-05:00",
+                        "America/Chicago",
+                        "-9999"))
   
+  #Since the Serial Number is included, each file has different column names. 
+  # Here's a quick and dirty fix
+  #1. Pull the original column names
+  columns_original <- colnames(temp)
+  #2. Truncate the column names, removing Serial Number. Makes them uniform across files.
+  columns_output <- str_trunc(columns_original, width = 7, side = "right", ellipsis = "_")
+  #3. Apply the truncated col names to temp
+  colnames(temp) <- columns_output
+  
+
+  #Spit temp out into the world
+  temp <- temp %>% 
+    #Add columns
+    add_column(serial_number) %>% 
+    add_column(time_zone) %>% 
+    #Convert Timestamp from char to datetime
+    mutate(Timestamp = mdy_hms(`Date T_`, tz = tz)) %>% 
+    select(-c(`Date T_`))
   
 }
     
