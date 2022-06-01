@@ -5,17 +5,17 @@
 # Purpose: Quick dygraph
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-prelim_plot <- function(df){
+prelim_plot <- function(temp){
   
   #convert to an xts
-  xts_form <- df 
+  xts_form <- temp %>% 
+    select(c(Timestamp, SpC_low_range))
   
-  xts_form <- xts(df, order.by = xts_form$Timestamp)
+  xts_form <- xts(xts_form, order.by = xts_form$Timestamp)
   
   #Plot data
   
-  dygraph(xts_form, main = SiteName) %>% 
+  dygraph(xts_form) %>% 
     dyRangeSelector() %>% 
-    dyLegend() %>% 
-    dyAxis("y", label = "Variable") 
+    dyLegend() 
 }

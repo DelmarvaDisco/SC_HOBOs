@@ -23,7 +23,7 @@ library(stringr)
 
 source("functions/download_hobo.R")
 source("functions/prelim_plot.R")
-
+source("functions/fun_anomalous.R")
 
 # 2. Read in the files ----------------------------------------------------
 
@@ -83,7 +83,22 @@ rm(data_dir, data_BC, data_JL)
 temp <- df %>% 
   filter(Site_ID == "DK_SW")
 
+#Look at plotted values
+prelim_plot(temp)
+
+#Filter out the values at the beginning & end of deployments
+temp <- temp %>% 
+  filter(Timestamp >= "2021-04-17 19:30:00") %>% 
+  filter(Timestamp <= "2021-08-05 16:30:00" | Timestamp >= "2021-09-24 11:30:00") %>% 
+  filter(Timestamp <= "2021-12-13 16:00:00")
+
+#Filter out anomalous values
+temp <- fun_anomalous(temp, min = -1, max = 1)
 
 prelim_plot(temp)
+
+  
+
+
 
 
