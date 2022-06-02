@@ -31,8 +31,7 @@ data_dir <- "data/"
 
 # 2. Read in the files ----------------------------------------------------
 
-
-# 2a. Read the JL data ----------------------------------------------------
+# 2.1 Read the JL data ----------------------------------------------------
 
 files <- list.files(paste0(data_dir, "JL/"), full.names = TRUE, pattern = ".csv")
 
@@ -42,7 +41,7 @@ data_JL <- files %>%
 #Mush the tibbles together
   reduce(bind_rows)
 
-# 2b. Read the BC data ----------------------------------------------------
+# 2.2 Read the BC data ----------------------------------------------------
 
 files <- list.files(paste0(data_dir, "BC/"), full.names = TRUE, pattern = ".csv")
 
@@ -57,6 +56,7 @@ data_BC <- files %>%
 df <- rbind(data_JL, data_BC) 
 
 list_JL <- unique(data_JL$Site_ID)
+list_BC <- unique(data_BC$Site_ID)
 
 #Rename columns
 colnames(df) <- c("record_num", 
@@ -84,6 +84,7 @@ rm(data_dir, data_BC, data_JL)
 # 4. Cut the crappy values --------------------------------------------------------------------
 
 # 4.1 DK_SW ---------------------------------------------------------------
+
 Site <- "DK_SW"
 
 temp <- df %>% 
@@ -131,6 +132,7 @@ output <- rbind(output, temp)
 rm(temp, Site)
 
 # 4.3 TS_SW -------------------------------------------------------------------
+
 Site <- "TS_SW"
 
 temp <- df %>% 
@@ -154,6 +156,7 @@ rm(temp, Site)
 
 
 # 4.4 BD_CH -------------------------------------------------------------------
+
 Site <- "BD_CH"
 
 temp <- df %>% 
@@ -164,8 +167,75 @@ prelim_plot(temp)
 temp <- temp %>% 
   filter(Timestamp >= "2021-09-24 10:00:00")
 
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
 
 # 4.5 TS_CH -------------------------------------------------------------------
+
+Site <- "TS_CH"
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 10:00:00")
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
+
+# 4.6 OB_SW ---------------------------------------------------------------
+
+Site <- "OB_SW"
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 12:00:00") %>% 
+  filter(Timestamp <= "2021-10-09 10:00:00" | Timestamp >= "2021-10-10 18:00:00") %>%
+  filter(Timestamp <= "2021-10-11 2:00:00" | Timestamp >= "2021-10-26 6:30:00") %>%
+  filter(Timestamp <= "2021-10-27 13:30:00" | Timestamp >= "2021-10-29 23:00:00") %>%
+  filter(Timestamp <= "2021-12-03 9:15:00") 
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
+
+
+# 4.7 OB_UW -------------------------------------------------------------------
+
+
+# 4.8 XB_SW ---------------------------------------------------------------
+
+
+# 4.9 XB_CH ---------------------------------------------------------------
+
+
+# 4.10 MB_SW -------------------------------------------------------------------
+
+
+# 4.11 MB_UW --------------------------------------------------------------
+
+
+# 4.12 HB_SW --------------------------------------------------------------------
+
+
+# 5. Plot the output ------------------------------------------------------
+
+
+
 
 
 
