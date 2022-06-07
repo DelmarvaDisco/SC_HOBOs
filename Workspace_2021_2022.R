@@ -16,6 +16,8 @@
 remove(list = ls())
 
 library(xts)
+library(readxl)
+library(readr)
 library(dygraphs)
 library(purrr)
 library(lubridate)
@@ -26,6 +28,7 @@ library(stringr)
 source("functions/download_hobo.R")
 source("functions/prelim_plot.R")
 source("functions/fun_anomalous.R")
+source("functions/download_logs.R")
 
 data_dir <- "data/"
 
@@ -83,9 +86,9 @@ rm(data_BC, data_JL)
 
 # 4. Cut the crappy values --------------------------------------------------------------------
 
-# 4.1 DK_SW ---------------------------------------------------------------
+# 4.1 DK-SW ---------------------------------------------------------------
 
-Site <- "DK_SW"
+Site <- "DK-SW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -109,9 +112,9 @@ output <- temp
 
 rm(temp, Site)
 
-# 4.2 ND_SW -------------------------------------------------------------------
+# 4.2 ND-SW -------------------------------------------------------------------
 
-Site <- "ND_SW"
+Site <- "ND-SW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -131,9 +134,9 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-# 4.3 TS_SW -------------------------------------------------------------------
+# 4.3 TS-SW -------------------------------------------------------------------
 
-Site <- "TS_SW"
+Site <- "TS-SW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -155,28 +158,9 @@ output <- rbind(output, temp)
 rm(temp, Site)
 
 
-# 4.4 BD_CH -------------------------------------------------------------------
+# 4.4 BD-CH -------------------------------------------------------------------
 
-Site <- "BD_CH"
-
-temp <- df %>% 
-  filter(Site_ID == Site)
-
-prelim_plot(temp)
-
-temp <- temp %>% 
-  filter(Timestamp >= "2021-09-24 10:00:00")
-
-temp <- fun_anomalous(temp, min = -1, max = 1)
-
-output <- rbind(output, temp)
-
-rm(temp, Site)
-
-# 4.5 TS_CH -------------------------------------------------------------------
-
-Site <- "TS_CH"
-
+Site <- "BD-CH"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -192,9 +176,28 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-# 4.6 OB_SW ---------------------------------------------------------------
+# 4.5 TS-CH -------------------------------------------------------------------
 
-Site <- "OB_SW"
+Site <- "TS-CH"
+
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 10:00:00")
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
+
+# 4.6 OB-SW ---------------------------------------------------------------
+
+Site <- "OB-SW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -214,9 +217,9 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-# 4.7 OB_UW -------------------------------------------------------------------
+# 4.7 OB-UW -------------------------------------------------------------------
 
-Site <- "OB_UW"
+Site <- "OB-UW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -234,9 +237,9 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-# 4.8 XB_SW ---------------------------------------------------------------
+# 4.8 XB-SW ---------------------------------------------------------------
 
-Site <- "XB_SW"
+Site <- "XB-SW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -258,9 +261,9 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-# 4.9 XB_CH ---------------------------------------------------------------
+# 4.9 XB-CH ---------------------------------------------------------------
 
-Site <- "XB_CH"
+Site <- "XB-CH"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -279,9 +282,9 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-# 4.10 MB_SW -------------------------------------------------------------------
+# 4.10 MB-SW -------------------------------------------------------------------
 
-Site <- "MB_SW"
+Site <- "MB-SW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -298,9 +301,9 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-# 4.11 MB_UW --------------------------------------------------------------
+# 4.11 MB-UW --------------------------------------------------------------
 
-Site <- "MB_UW"
+Site <- "MB-UW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -318,9 +321,9 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-# 4.12 HB_SW --------------------------------------------------------------------
+# 4.12 HB-SW --------------------------------------------------------------------
 
-Site <- "HB_SW"
+Site <- "HB-SW"
 
 temp <- df %>% 
   filter(Site_ID == Site)
@@ -358,21 +361,49 @@ output_BC <- ggplot(data = output %>% filter(output$Catchment == "BC"),
 
 (output_BC)
 
+rm(output_JL, output_BC)
+
 
 # 6. Check the output against YSI Field Measurements ----------------------
 
+#List the field logs
 Field_logs <- list.files(paste0(data_dir, "Field_logs"), 
                          full.names = TRUE, 
-                         pattern = ".csv")
+                         pattern = ".xlsx") 
+#Eliminate 2020 field logs
+Field_logs <- Field_logs[!str_detect(Field_logs, "2020")]
 
+#Download and rbind
+SpC_field <- Field_logs %>% 
+  map(download_logs) %>% 
+  reduce(bind_rows) 
 
+SpC_field <- SpC_field %>% 
+  mutate(Timestamp = round_date(Timestamp, "15 minute"))
 
+#select columns to match with Hobos
+output <- output %>% 
+  select(Temp_C, Site_ID, Timestamp, SpC_low_range)  
+ 
+#Join Hobo values to the field data
+checks <- inner_join(output_f, SpC_field, by = c("Timestamp", "Site_ID"))
 
+#Compare sensors to YSI
+checks <- checks %>% 
+  mutate(Hobo_YSI_diff = (`SpC_low_range` - `SpC_field`))
 
+checks_plot <- ggplot(data = checks, 
+                      mapping = aes(x = Timestamp, 
+                                    y = Hobo_YSI_diff, 
+                                    color = Site_ID)) +
+  geom_point(size = 4) + 
+  scale_y_continuous(limits = c(-50, 50)) +
+  theme_bw()
 
+(checks_plot)
 
+# 7. Write the output -----------------------------------------------------
 
-
-
+write_csv(output, file = paste0(data_dir,"SpC_output_2021_2022.csv"))
 
 

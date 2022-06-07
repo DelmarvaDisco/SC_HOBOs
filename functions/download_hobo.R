@@ -19,7 +19,9 @@ download_hobo <- function(files){
     # Add a column for the file name; could be helpful for data mgmt.
     mutate(file = str_sub(files, 9)) %>% 
     # Get the Site_ID from the file name
-    mutate(Site_ID = str_sub(file, 1, 5))
+    mutate(Site_ID = if_else(str_detect(file, "UW"),
+                             str_sub(file, 1, 6),
+                             str_sub(file, 1, 5))) 
   
   #Pull serial number from column names
   serial_number <- colnames(temp)[grep("LGR",colnames(temp))][1] %>% 
@@ -53,6 +55,8 @@ download_hobo <- function(files){
     add_column(time_zone) %>% 
     #Convert Timestamp from char to datetime
     mutate(Timestamp = mdy_hms(`Date T_`, tz = tz)) %>% 
+    #Change the Site_ID to right format
+    mutate(Site_ID = str_replace(Site_ID, "_", "-")) %>% 
     select(-c(`Date T_`))
   
 }
