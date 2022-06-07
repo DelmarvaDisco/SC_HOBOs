@@ -79,7 +79,7 @@ df <- df %>%
   mutate("SpC_low_range" = Low_range_uScm/(1 - ((25 - Temp_C) * 0.021))) #%>% 
   #filter(Low_range_uScm >= 10)
 
-rm(data_dir, data_BC, data_JL)
+rm(data_BC, data_JL)
 
 # 4. Cut the crappy values --------------------------------------------------------------------
 
@@ -177,6 +177,7 @@ rm(temp, Site)
 
 Site <- "TS_CH"
 
+
 temp <- df %>% 
   filter(Site_ID == Site)
 
@@ -205,7 +206,7 @@ temp <- temp %>%
   filter(Timestamp <= "2021-10-09 10:00:00" | Timestamp >= "2021-10-10 18:00:00") %>%
   filter(Timestamp <= "2021-10-11 2:00:00" | Timestamp >= "2021-10-26 6:30:00") %>%
   filter(Timestamp <= "2021-10-27 13:30:00" | Timestamp >= "2021-10-29 23:00:00") %>%
-  filter(Timestamp <= "2021-12-03 9:15:00") 
+  filter(Timestamp <= "2021-12-03 9:15:00" | Timestamp >= "2022-02-23 9:30:00") 
 
 temp <- fun_anomalous(temp, min = -1, max = 1)
 
@@ -213,26 +214,158 @@ output <- rbind(output, temp)
 
 rm(temp, Site)
 
-
 # 4.7 OB_UW -------------------------------------------------------------------
 
+Site <- "OB_UW"
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 12:00:00") %>% 
+  filter(Timestamp <= "2021-09-27 18:00:00" | Timestamp >= "2021-10-30 8:30:00") %>%
+  filter(Timestamp <= "2021-11-06 6:45:00" | Timestamp >= "2022-01-08 15:30:00") 
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
 
 # 4.8 XB_SW ---------------------------------------------------------------
 
+Site <- "XB_SW"
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 12:00:00") %>% 
+  filter(Timestamp <= "2021-10-08 20:45:00" | Timestamp >= "2021-10-10 18:00:00") %>%
+  filter(Timestamp <= "2021-10-11 7:45:00" | Timestamp >= "2021-10-13 15:30:00") %>%
+  filter(Timestamp <= "2021-10-14 18:00:00" | Timestamp >= "2021-10-17 11:30:00") %>%
+  filter(Timestamp <= "2021-10-17 17:45:00" | Timestamp >= "2021-10-26 11:30:00") %>%
+  filter(Timestamp <= "2021-12-09 7:00:00" | Timestamp >= "2021-12-11 19:00:00") %>%
+  filter(Timestamp <= "2021-12-15 10:00:00" | Timestamp >= "2022-02-23 15:45:00")
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
 
 # 4.9 XB_CH ---------------------------------------------------------------
 
+Site <- "XB_CH"
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 12:30:00") %>% 
+  filter(Timestamp <= "2021-10-18 13:15:00" | Timestamp >= "2021-10-18 15:15:00") %>%
+  filter(Timestamp <= "2021-12-15 8:00:00" | Timestamp >= "2021-12-15 13:30:00") %>% 
+  filter(Timestamp <= "2022-02-23 10:15:00" | Timestamp >= "2022-02-24 13:15:00") 
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
 
 # 4.10 MB_SW -------------------------------------------------------------------
 
+Site <- "MB_SW"
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 11:45:00" | Timestamp <= "2021-12-15 14:45:00") %>% 
+  filter(Timestamp <= "2021-12-15 14:45:00" | Timestamp >= "2022-02-23 11:00:00")
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
 
 # 4.11 MB_UW --------------------------------------------------------------
 
+Site <- "MB_UW"
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 12:30:00") %>% 
+  filter(Timestamp <= "2021-09-28 16:45:00" | Timestamp >= "2021-10-30 4:15:00") %>%
+  filter(Timestamp <= "2021-11-10 7:30:00" | Timestamp >= "2022-01-05 21:45:00") 
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
 
 # 4.12 HB_SW --------------------------------------------------------------------
 
+Site <- "HB_SW"
+
+temp <- df %>% 
+  filter(Site_ID == Site)
+
+prelim_plot(temp)
+
+temp <- temp %>% 
+  filter(Timestamp >= "2021-09-24 12:15:00") %>% 
+  filter(Timestamp <= "2021-12-16 10:00:00" | Timestamp >= "2022-02-23 15:15:00") %>% 
+  filter(Timestamp <= "2022-05-02 15:30:00")
+
+temp <- fun_anomalous(temp, min = -1, max = 1)
+
+output <- rbind(output, temp)
+
+rm(temp, Site)
 
 # 5. Plot the output ------------------------------------------------------
+
+output_JL <- ggplot(data = output %>% filter(output$Catchment == "JL"),
+                   mapping = aes(x = Timestamp, 
+                                     y = SpC_low_range,
+                                     color = Site_ID)) +
+  geom_line () +
+  theme_bw ()
+
+(output_JL)
+
+output_BC <- ggplot(data = output %>% filter(output$Catchment == "BC"),
+                    mapping = aes(x = Timestamp, 
+                                  y = SpC_low_range,
+                                  color = Site_ID)) +
+  geom_line () +
+  theme_bw ()
+
+(output_BC)
+
+
+# 6. Check the output against YSI Field Measurements ----------------------
+
+Field_logs <- list.files(paste0(data_dir, "Field_logs"), 
+                         full.names = TRUE, 
+                         pattern = ".csv")
+
+
 
 
 
