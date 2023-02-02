@@ -51,14 +51,23 @@ download_hobo <- function(files){
   
   #Final reformatting to tidy up files
   temp <- temp %>% 
+    filter(!is.na(`Low Ra_`)) %>% 
     #Add columns for SN and TZ
     add_column(serial_number) %>% 
     add_column(time_zone) %>% 
     #Convert Timestamp from char to datetime
-    mutate(Timestamp = lubridate::mdy_hms(`Date T_`, tz = tz)) %>% 
+    mutate(Timestamp = lubridate::mdy_hms(`Date T_`, tz = tz)) %>%
     #Change the Site_ID to right format. Replace the underscore with a dash.
     mutate(Site_ID = str_replace(Site_ID, "_", "-")) %>% 
-    select(-c(`Date T_`))
+    select(-c(`Date T_`)) 
+  
+  print(temp %>% slice_head(n = 10))
+  
+  print(temp %>% slice_tail(n = 10))
+  
+  print(paste0(time_zone, "-->", tz))
+  
+  return(temp)
   
 }
     

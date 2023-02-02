@@ -24,6 +24,7 @@ source("functions/download_hobo.R")
 source("functions/prelim_plot.R")
 source("functions/fun_anomalous.R")
 source("functions/download_logs.R")
+source("functions/comp_plot.R")
 
 data_dir <- "data/"
 
@@ -96,14 +97,14 @@ rm(data_BC, data_JL)
 
 Site <- "DK-SW"
 
-temp <- df %>% 
+raw <- df %>% 
   filter(Site_ID == Site)
 
 #Look at plotted values
-prelim_plot(temp)
+prelim_plot(raw)
 
 #Filter out the values at the beginning & end of deployments
-temp <- temp %>% 
+temp <- raw %>% 
   #Spring 2021 Deployment Start
   filter(Timestamp >= "2021-04-17 19:30:00") %>% 
   #Site dried out in summer 2021
@@ -119,7 +120,7 @@ temp <- temp %>%
   #Intermittently dry in Nov 2022 
   filter(Timestamp <= "2022-11-07 2:15:00" | Timestamp >= "2022-11-11 21:15:00") %>% 
   #Intermittently dry in Nov 2022 
-  filter(Timestamp <= "2022-11-22 4:15:00" | Timestamp >= "2022-11-27 4:45:00") %>% 
+  filter(Timestamp <= "2022-11-22 4:15:00" | Timestamp >= "2022-11-27 15:45:00") %>% 
   #End fall 2022 deployment
   filter(Timestamp <= "2022-12-16 3:30:00")
 
@@ -128,6 +129,9 @@ temp <- fun_anomalous(temp, min = -1, max = 1)
 
 #Plot again for another look
 prelim_plot(temp)
+
+#Compare the raw data to the processed data
+comp_plot(raw, temp)
 
 #Add flags to data with mucky sensor and low water levels. 
 temp <- temp %>% 
@@ -138,12 +142,11 @@ temp <- temp %>%
                          "Site dry and sensor mucky, data quality low. SpC values too high.",
                          "NA"))
 
-
 #Create output file for processed data. 
 output <- temp
 
 #Clean up environment
-rm(temp, Site)
+rm(temp, Site, raw)
 
 # 4.2 ND-SW -------------------------------------------------------------------
 
@@ -151,60 +154,125 @@ rm(temp, Site)
 
 Site <- "ND-SW"
 
-temp <- df %>% 
+raw <- df %>% 
   filter(Site_ID == Site)
 
-prelim_plot(temp)
+prelim_plot(raw)
 
-temp <- temp %>% 
+temp <- raw %>% 
+  #Spring 2021 deployment start
   filter(Timestamp >= "2021-05-21 16:00:00") %>% 
+  #Site dried out over Summer 2021
   filter(Timestamp <= "2021-08-05 15:30:00" | Timestamp >= "2021-09-24 10:45:00") %>%
+  #A few days in Fall 2021 with bad data
   filter(Timestamp <= "2021-10-31 9:30:00" | Timestamp >= "2021-11-1 11:00:00") %>%
-  filter(Timestamp <= "2021-12-14 7:00:00" | Timestamp >= "2022-02-22 10:00:00") 
+  #Sensor pulled for Winter 2022-2023
+  filter(Timestamp <= "2021-12-14 7:00:00" | Timestamp >= "2022-02-22 10:00:00") %>% 
+  #Dried in Summer 2022
+  filter(Timestamp <= "2022-08-18 23:00:00" | Timestamp >= "2022-10-04 21:30:00") %>%
+  #Intermittently dry Fall 2022
+  filter(Timestamp <= "2022-10-08 18:30:00" | Timestamp >= "2022-10-10 14:30:00") %>% 
+  ##Intermittently dry Fall 2022
+  filter(Timestamp <= "2022-10-10 18:45:00" | Timestamp >= "2022-12-03 8:45:00") %>% 
+  #filter(Ti)
+  #Pulled for winter 2022-2023
+  filter(Timestamp <= "2022-12-16 14:00:00")
 
+#Anomalous values
 temp <- fun_anomalous(temp, min = -1, max = 1)
 
+#Another look at data
+prelim_plot(temp)
+
+#Compare the raw data to the processed data
+comp_plot(raw, temp)
+
+#Add flags
+# temp <- temp %>% 
+#   mutate(Flag = if_else(Timestamp >= "2022-08-01 1:00:00",
+#                         "1", 
+#                         "0"),
+#          Notes = if_else(Timestamp >= "2022-08-01 1:00:00",
+#                          "Site dry and sensor mucky, data quality low. SpC values too high.",
+#                          "NA"))
+
+#Not flagging data for now
+temp <- temp %>%
+  mutate(Flag = "0",
+         Notes = "NA")
+
+#Append data to output
 output <- rbind(output, temp)
 
-rm(temp, Site)
+rm(temp, Site, raw)
 
 # 4.3 TS-SW -------------------------------------------------------------------
 
 Site <- "TS-SW"
 
-temp <- df %>% 
+raw <- df %>% 
   filter(Site_ID == Site)
 
-prelim_plot(temp)
+prelim_plot(raw)
 
-temp <- temp %>% 
+temp <- raw %>% 
   filter(Timestamp >= "2021-09-24 10:00:00") %>% 
   filter(Timestamp <= "2021-10-20 7:00:00" | Timestamp >= "2021-10-26 13:00:00") %>%
   filter(Timestamp <= "2021-10-24 7:30:00" | Timestamp >= "2021-10-26 1:00:00") %>%
   filter(Timestamp <= "2021-10-29 16:30:00" | Timestamp >= "2021-10-29 21:00:00") %>%
   filter(Timestamp <= "2021-11-24 3:30:00" | Timestamp >= "2022-02-22 11:00:00") %>% 
-  filter(Timestamp <= "2022-04-22 16:00:00")  
+  filter(Timestamp <= "2022-06-13 10:00:00" | Timestamp >= "2022-12-15 21:15:00") %>% 
+  filter(Timestamp <= "2022-12-16 13:30:00")
 
 temp <- fun_anomalous(temp, min = -1, max = 1)
 
+#Another look at data
+prelim_plot(temp)
+
+#Compare the raw data to the processed data
+comp_plot(raw, temp)
+
+#No data to flag
+temp <- temp %>%
+  mutate(Flag = "0",
+         Notes = "NA")
+
+#Append to output file
 output <- rbind(output, temp)
 
-rm(temp, Site)
-
+rm(temp, Site, raw)
 
 # 4.4 BD-CH -------------------------------------------------------------------
 
 Site <- "BD-CH"
 
-temp <- df %>% 
+raw <- df %>% 
   filter(Site_ID == Site)
 
-prelim_plot(temp)
+prelim_plot(raw)
 
-temp <- temp %>% 
-  filter(Timestamp >= "2021-09-24 10:00:00")
+temp <- raw %>% 
+  #Deployment started in Fall 2021
+  filter(Timestamp >= "2021-09-24 10:00:00") %>% 
+  #Data bad until well purge on Oct 18th 2021
+  filter(Timestamp >= "2021-10-19 15:00:00") %>% 
+  #Deployment ends Dec 2022
+  filter(Timestamp <= "2022-12-16 12:30:00") %>% 
+  #!!! A quick and easy way to eliminate low values when well was dry or sensor was removed. 
+  filter(Low_range_uScm > 10)
 
 temp <- fun_anomalous(temp, min = -1, max = 1)
+
+#Another look at data
+prelim_plot(temp)
+
+#Compare the raw data to the processed data
+comp_plot(raw, temp)
+
+#Data is most likely worthless. 
+temp <- temp %>%
+  mutate(Flag = "2",
+         Notes = "Data is likely unusable. Signal is obscured by dissolved stuff accumulating in the well between purges.")
 
 output <- rbind(output, temp)
 
@@ -214,16 +282,31 @@ rm(temp, Site)
 
 Site <- "TS-CH"
 
-
-temp <- df %>% 
+raw <- df %>% 
   filter(Site_ID == Site)
 
-prelim_plot(temp)
+prelim_plot(raw)
 
-temp <- temp %>% 
-  filter(Timestamp >= "2021-09-24 10:00:00")
+temp <- raw %>% 
+  #Sensor initially launched Fall 2021
+  filter(Timestamp >= "2021-09-24 10:00:00") %>% 
+  #Sensor initially pulled December 2022
+  filter(Timestamp <= "2022-12-16 13:30:00") %>% 
+  #!!! A quick and easy way to eliminate low values when well was dry or sensor was removed. 
+  filter(Low_range_uScm > 10)
 
 temp <- fun_anomalous(temp, min = -1, max = 1)
+
+#Another look after cleaning
+prelim_plot(temp)
+
+#Compare the raw data to the processed data
+comp_plot(raw, temp)
+
+#Flagging all well data. Probably not usefull, except for specifc things. 
+temp <- temp %>%
+  mutate(Flag = "2",
+         Notes = "Data is likely unusable. Signal is obscured by sediment and dissolved solutes accumulating in the well between purges.")
 
 output <- rbind(output, temp)
 
@@ -233,40 +316,94 @@ rm(temp, Site)
 
 Site <- "OB-SW"
 
-temp <- df %>% 
+raw <- df %>% 
   filter(Site_ID == Site)
 
-prelim_plot(temp)
+prelim_plot(raw)
 
-temp <- temp %>% 
-  filter(Timestamp >= "2021-09-24 12:00:00") %>% 
+temp <- raw %>% 
+  #Deployed fall 2021
+  filter(Timestamp >= "2021-09-24 12:00:00") %>%
+  #Intermittently dry
   filter(Timestamp <= "2021-10-09 10:00:00" | Timestamp >= "2021-10-10 18:00:00") %>%
+  #Intermittently dry
   filter(Timestamp <= "2021-10-11 2:00:00" | Timestamp >= "2021-10-26 6:30:00") %>%
+  #Intermittently dry
   filter(Timestamp <= "2021-10-27 13:30:00" | Timestamp >= "2021-10-29 23:00:00") %>%
-  filter(Timestamp <= "2021-12-03 9:15:00" | Timestamp >= "2022-02-23 9:30:00") 
+  #Pulled durring winter 2021-2022
+  filter(Timestamp <= "2021-12-03 9:15:00" | Timestamp >= "2022-02-23 9:30:00") %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-06-19 17:00:00" | Timestamp >= "2022-06-23 20:00:00") %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-06-25 7:15:00" | Timestamp >= "2022-07-07 10:15:00") %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-07-08 2:45:00" | Timestamp >= "2022-07-09 20:15:00") %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-07-14 14:15:00" | Timestamp >= "2022-07-16 21:15:00") %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-07-17 18:15:00" | Timestamp >= "2022-07-19 20:15:00") %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-07-20 10:15:00" | Timestamp >= "2022-07-21 12:15:00") %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-07-21 8:15:00" | Timestamp >= "2022-07-22 13:15:00")  %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-08-02 14:15:00" | Timestamp >= "2022-08-05 12:15:00") %>% 
+  #Intermittently dry
+  filter(Timestamp <= "2022-08-07 15:30:30" | Timestamp >= "2022-12-06 14:00:00") %>% 
+  #Pulled for winter 
+  filter(Timestamp <= "2022-12-14 13:00:00")
 
 temp <- fun_anomalous(temp, min = -1, max = 1)
 
+#Another look at the data 
+prelim_plot(temp) 
+
+#Compare the raw data to the processed data
+comp_plot(raw, temp)
+
+#No data to flag
+temp <- temp %>%
+  mutate(Flag = "0",
+         Notes = "NA")
+
+#Append to output file
 output <- rbind(output, temp)
 
-rm(temp, Site)
+rm(temp, Site, raw)
 
-# 4.7 OB-UW -------------------------------------------------------------------
+# 4.7 OB-UW1 -------------------------------------------------------------------
 
-Site <- "OB-UW"
+Site <- "OB-UW1"
 
-temp <- df %>% 
+raw <- df %>% 
   filter(Site_ID == Site)
 
-prelim_plot(temp)
+prelim_plot(raw)
 
-temp <- temp %>% 
+temp <- raw %>% 
+  #Deployed in Fall 2021
   filter(Timestamp >= "2021-09-24 12:00:00") %>% 
+  #Intermitently dry in fall 2021
   filter(Timestamp <= "2021-09-27 18:00:00" | Timestamp >= "2021-10-30 8:30:00") %>%
-  filter(Timestamp <= "2021-11-06 6:45:00" | Timestamp >= "2022-01-08 15:30:00") 
+  #Intermitently dry in fall 2021 - winter 2022
+  filter(Timestamp <= "2021-11-06 6:45:00" | Timestamp >= "2022-01-08 15:30:00") %>% 
+  #Dry until deployment in winter 2022
+  filter(Timestamp <= "2022-06-05 4:00:00")
 
 temp <- fun_anomalous(temp, min = -1, max = 1)
 
+#Another look at the data 
+prelim_plot(temp) 
+
+#Compare the raw data to the processed data
+comp_plot(raw, temp)
+
+#Flagging all well data. Probably not usefull, except for specifc things. 
+temp <- temp %>%
+  mutate(Flag = "2",
+         Notes = "Data is likely unusable. Signal is obscured by sediment and dissolved solutes accumulating in the well between purges.")
+
+#Append to output file
 output <- rbind(output, temp)
 
 rm(temp, Site)
