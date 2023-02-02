@@ -1,6 +1,6 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Name: Hobo SC download
-# Coder: James Maze with help from Nate Jone's waterLevel
+# Coder: James Maze with help from Nate Jone's waterLevel code
 # Date: 21 Jan 2021
 # Purpose: Download lots of SC files
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -11,19 +11,21 @@ download_hobo <- function(files){
                    skip = 1,
                    col_names = TRUE) %>% 
     as_tibble() %>% 
-    # Only select important cols, forget that coupler attached stuff. 
-    #Also elminate Full Range measurements
+    # Only select important columns, forget the coupler attached column etc 
+    #Also eliminate Full Range measurements. Our sites are all Low Range
     select(!contains(c("Coupler", "Host", "End", "Stopped", "Full Range"))) %>% 
     #Add a column to delineate JL from BC
     mutate(Catchment = str_sub(files, 6, 7)) %>% 
     # Add a column for the file name; could be helpful for data mgmt.
     mutate(file = str_sub(files, 9)) %>% 
     # Get the Site_ID from the file name
+    # Use if_else because there's different numbers of characters for UW vs. SW 
+    # sites
     mutate(Site_ID = if_else(str_detect(file, "UW"),
                              str_sub(file, 1, 6),
                              str_sub(file, 1, 5))) 
   
-  #Pull serial number from column names
+  #Pull the sensor serial number from column names
   serial_number <- colnames(temp)[grep("LGR",colnames(temp))][1] %>% 
     str_extract(., pattern = "\\d{8,10}")
   
@@ -31,7 +33,7 @@ download_hobo <- function(files){
   time_zone <- colnames(temp)[grep("GMT",colnames(temp))]  %>% 
     str_sub(12, 20)
   
-  #Specifiy the timezones with syntax for lubridate
+  #Specify the timezones with proper syntax for lubridate. 
   tz <- if_else(time_zone=="GMT-04:00",
                 "America/New_York",
                 if_else(time_zone=="GMT-05:00",
@@ -39,23 +41,22 @@ download_hobo <- function(files){
                         "-9999"))
   
   #Since the Serial Number is included, each file has different column names. 
-  # Here's a quick and dirty fix
+  # Here's a quick and dirty fix for binding the rows.
   #1. Pull the original column names
   columns_original <- colnames(temp)
-  #2. Truncate the column names, removing Serial Number. Makes them uniform across files.
+  #2. Truncate the column names, removing Serial Number. Makes cols uniform across the different files.
   columns_output <- str_trunc(columns_original, width = 7, side = "right", ellipsis = "_")
-  #3. Apply the truncated col names to temp
+  #3. Use the truncated col names to rename the data's columns
   colnames(temp) <- columns_output
   
-
-  #Spit temp out into the world
+  #Final reformatting to tidy up files
   temp <- temp %>% 
-    #Add columns
+    #Add columns for SN and TZ
     add_column(serial_number) %>% 
     add_column(time_zone) %>% 
     #Convert Timestamp from char to datetime
-    mutate(Timestamp = mdy_hms(`Date T_`, tz = tz)) %>% 
-    #Change the Site_ID to right format
+    mutate(Timestamp = lubridate::mdy_hms(`Date T_`, tz = tz)) %>% 
+    #Change the Site_ID to right format. Replace the underscore with a dash.
     mutate(Site_ID = str_replace(Site_ID, "_", "-")) %>% 
     select(-c(`Date T_`))
   

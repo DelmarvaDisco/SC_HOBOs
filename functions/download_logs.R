@@ -25,8 +25,8 @@ download_logs <- function(Field_logs){
     mutate(Year = str_sub(Date, 1, 4),
            Month = str_sub(Date, 5, 6), 
            Day = str_sub(Date, 7, 8)) %>% 
-    mutate(Date = ymd(paste0(Year, "-", Month, "-", Day))) %>% 
-    mutate(Timestamp = ymd_hms(paste0(Date, Time))) %>% 
+    mutate(Date = lubridate::ymd(paste0(Year, "-", Month, "-", Day))) %>% 
+    mutate(Timestamp = lubridate::ymd_hms(paste0(Date, Time))) %>% 
     rename("SpC_field" = `Spec. Cond. (us/cm)`,
            "Temp_field" = `Temp (Deg. C)`) %>% 
     select(-c("Year", "Month", "Day", "Date", "Time"))

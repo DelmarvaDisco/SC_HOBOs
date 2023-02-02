@@ -17,13 +17,8 @@ remove(list = ls())
 
 library(xts)
 library(readxl)
-library(readr)
 library(dygraphs)
-library(purrr)
-library(lubridate)
-library(stringr)
 library(tidyverse)
-library(stringr)
 
 source("functions/download_hobo.R")
 source("functions/prelim_plot.R")
@@ -36,32 +31,42 @@ data_dir <- "data/"
 
 # 2.1 Read the JL data ----------------------------------------------------
 
+#Select JL files from data directory
 files <- list.files(paste0(data_dir, "JL/"), full.names = TRUE, pattern = ".csv")
 
-#Download this mess
+#Download and combine files
 data_JL <- files %>% 
   map(download_hobo) %>% 
 #Mush the tibbles together
   reduce(bind_rows)
 
+#Clean up environment
+rm(files)
+
 # 2.2 Read the BC data ----------------------------------------------------
 
+#Select BC files from data directory
 files <- list.files(paste0(data_dir, "BC/"), full.names = TRUE, pattern = ".csv")
 
-#Download
+#Download and combine files
 data_BC <- files %>% 
   map(download_hobo) %>% 
 #Mush the tibbles together
   reduce(bind_rows)
 
+#Clean up
+rm(files)
+
 # 3. Reformat the data ---------------------------------------------------------------------
 
+#Combine the sepperate catchments
 df <- rbind(data_JL, data_BC) 
 
+#List the Site IDs, helpful later?
 list_JL <- unique(data_JL$Site_ID)
 list_BC <- unique(data_BC$Site_ID)
 
-#Rename columns
+#Rename columns making them easier to work with. 
 colnames(df) <- c("record_num", 
                    "Low_range_uScm", 
                    "Temp_C", 
@@ -75,16 +80,17 @@ colnames(df) <- c("record_num",
 #Reformat some columns
 df <- df %>% 
   mutate(Low_range_uScm = as.numeric(Low_range_uScm)) %>%
-  #Do temperature conversion for SpC
-  filter(!is.na(Temp_C)) %>% 
-  filter(!is.na(Timestamp)) %>% 
-  filter(!is.na(Low_range_uScm)) %>% 
+  #there's some wonky na's for Timestamp, Temp_C, and Low_rang_uScm
+  filter(!is.na(Temp_C)) %>%
+  filter(!is.na(Timestamp)) %>%
+  filter(!is.na(Low_range_uScm)) %>%
+  #Do temperature conversion to get SpC from Cond
   mutate("SpC_low_range" = Low_range_uScm/(1 - ((25 - Temp_C) * 0.021))) #%>% 
   #filter(Low_range_uScm >= 10)
 
 rm(data_BC, data_JL)
 
-# 4. Cut the crappy values --------------------------------------------------------------------
+# 4. Cut the crappy values for each site --------------------------------------------------------------------
 
 # 4.1 DK-SW ---------------------------------------------------------------
 
@@ -98,21 +104,50 @@ prelim_plot(temp)
 
 #Filter out the values at the beginning & end of deployments
 temp <- temp %>% 
+  #Spring 2021 Deployment Start
   filter(Timestamp >= "2021-04-17 19:30:00") %>% 
+  #Site dried out in summer 2021
   filter(Timestamp <= "2021-08-05 16:30:00" | Timestamp >= "2021-09-24 11:30:00") %>% 
+  #Sensor pulled for winter 2022
   filter(Timestamp <= "2021-12-13 16:00:00" | Timestamp >= "2022-02-22 11:00:00") %>% 
-  filter(Timestamp <= "2022-04-28 16:30:00")
+  #Site dried out in summer 2022
+  filter(Timestamp <= "2022-07-25 18:00:00" | Timestamp >= "2022-10-03 1:00:00") %>% 
+  #Intermittently dry in Oct 2022
+  filter(Timestamp <= "2022-10-19 2:15:00" | Timestamp >= "2022-10-24 6:15:00") %>% 
+  #Intermittently dry in Nov 2022
+  filter(Timestamp <= "2022-10-28 3:15:00" | Timestamp >= "2022-11-01 21:15:00") %>% 
+  #Intermittently dry in Nov 2022 
+  filter(Timestamp <= "2022-11-07 2:15:00" | Timestamp >= "2022-11-11 21:15:00") %>% 
+  #Intermittently dry in Nov 2022 
+  filter(Timestamp <= "2022-11-22 4:15:00" | Timestamp >= "2022-11-27 4:45:00") %>% 
+  #End fall 2022 deployment
+  filter(Timestamp <= "2022-12-16 3:30:00")
 
 #Filter out anomalous values
 temp <- fun_anomalous(temp, min = -1, max = 1)
 
+#Plot again for another look
 prelim_plot(temp)
 
+#Add flags to data with mucky sensor and low water levels. 
+temp <- temp %>% 
+  mutate(Flag = if_else(Timestamp >= "2022-10-03 1:00:00" & Timestamp <= "2022-11-17 20:15:00",
+                        "1", 
+                        "0"),
+         Notes = if_else(Timestamp >= "2022-10-03 1:00:00" & Timestamp <= "2022-11-17 20:15:00",
+                         "Site dry and sensor mucky, data quality low. SpC values too high.",
+                         "NA"))
+
+
+#Create output file for processed data. 
 output <- temp
 
+#Clean up environment
 rm(temp, Site)
 
 # 4.2 ND-SW -------------------------------------------------------------------
+
+#Same workflow, if functions or syntax is confusing see comments for DK-SW
 
 Site <- "ND-SW"
 
@@ -125,8 +160,7 @@ temp <- temp %>%
   filter(Timestamp >= "2021-05-21 16:00:00") %>% 
   filter(Timestamp <= "2021-08-05 15:30:00" | Timestamp >= "2021-09-24 10:45:00") %>%
   filter(Timestamp <= "2021-10-31 9:30:00" | Timestamp >= "2021-11-1 11:00:00") %>%
-  filter(Timestamp <= "2021-12-14 7:00:00" | Timestamp >= "2022-02-22 10:00:00") %>% 
-  filter(Timestamp <= "2022-04-30 8:00:00")
+  filter(Timestamp <= "2021-12-14 7:00:00" | Timestamp >= "2022-02-22 10:00:00") 
 
 temp <- fun_anomalous(temp, min = -1, max = 1)
 
@@ -379,7 +413,7 @@ SpC_field <- Field_logs %>%
   reduce(bind_rows) 
 
 SpC_field <- SpC_field %>% 
-  mutate(Timestamp = round_date(Timestamp, "15 minute"))
+  mutate(Timestamp = base::round_date(Timestamp, "15 minute"))
 
 #select columns to match with Hobos
 output <- output %>% 

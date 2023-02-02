@@ -19,17 +19,21 @@ fun_anomalous <- function(temp, #timeseries data with anomalous values
   
   #Check values against the residuals of a rolling median. 
   temp <- temp %>% 
+    #Create rolling median besed on the 11 nearest values. 5 on either side.
     mutate("rolling_median" = rollmedian(temp$Low_range_uScm,
                                          k = 11,
                                          fill = NA, 
                                          align = "center")) %>% 
-    
+    #Calculate the difference between observations and rolling median
     mutate("residuals" = Low_range_uScm - rolling_median) %>% 
+    #Eliminate data with residuals above or below thresholds
+    #!!! You may need to tinker with these values !!!
     filter(residuals > min) %>% 
     filter(residuals < max) %>% 
     select(-c(rolling_median, residuals))
 
+  #return the data without anomalous values, which didn't meet residual thresholds
   
-  #return the df without anomalous values
   return(temp)
+  
 }
