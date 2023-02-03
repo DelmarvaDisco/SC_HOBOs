@@ -696,7 +696,13 @@ checks_plot <- ggplot(data = checks,
 
 (checks_plot)
 
+
+
 # 7. Write the output -----------------------------------------------------
+
+#Select columns of interest 
+output <- output %>% 
+  select(Low_range_uScm, Temp_C, Site_ID, Timestamp, SpC_low_range, Flag, Notes)
 
 write_csv(output, file = paste0(data_dir,"SpC_output_2021_2022.csv"))
 
